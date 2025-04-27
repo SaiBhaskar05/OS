@@ -1,58 +1,72 @@
-#include<stdio.h>
+#include <stdio.h>
 
-struct process{
+struct Process {
     int id;
-    int burst;
-    int completion;
-    int turnaround;
-    int waiting;
+    int arrivalTime;
+    int burstTime;
+    int completionTime;
+    int waitingTime;
+    int turnaroundTime;
+    int isCompleted;
 };
 
-int main(){
-    int n;
-    struct process p[10];
+int main() {
+    int n, time = 0, completed = 0;
+    float totalWT = 0, totalTAT = 0;
+    struct Process p[10];
 
     printf("Enter number of processes: ");
     scanf("%d", &n);
 
-    for(int i=0;i<n;i++){
-        p[i].id = i+1;
-        printf("Enter burst time for process %d: ", p[i].id);
-        scanf("%d", &p[i].burst);
+    for (int i = 0; i < n; i++) {
+        p[i].id = i + 1;
+        printf("Enter arrival time and burst time for Process %d: ", p[i].id);
+        scanf("%d %d", &p[i].arrivalTime, &p[i].burstTime);
+        p[i].isCompleted = 0;
     }
 
-    //sorting by burst time(sjf)
+    while (completed < n) {
+        int idx = -1;
+        int minBT = 10000;
 
-    for(int i=0;i<n;i++){
-        for(int j=0;j<n-i-1;j++){
-            if(p[j].burst>p[j+1].burst){
-                struct process temp = p[j];
-                p[j] = p[j+1];
-                p[j+1] = temp;
+        for (int i = 0; i < n; i++) {
+            if (p[i].arrivalTime <= time && !p[i].isCompleted) {
+                if (p[i].burstTime < minBT) {
+                    minBT = p[i].burstTime;
+                    idx = i;
+                }
+                // If two processes have same burst time, choose one with earlier arrival
+                else if (p[i].burstTime == minBT) {
+                    if (p[i].arrivalTime < p[idx].arrivalTime) {
+                        idx = i;
+                    }
+                }
             }
+        }
+
+        if (idx != -1) {
+            time += p[idx].burstTime;
+            p[idx].completionTime = time;
+            p[idx].turnaroundTime = p[idx].completionTime - p[idx].arrivalTime;
+            p[idx].waitingTime = p[idx].turnaroundTime - p[idx].burstTime;
+            p[idx].isCompleted = 1;
+            completed++;
+
+            totalWT += p[idx].waitingTime;
+            totalTAT += p[idx].turnaroundTime;
+        } else {
+            time++; // CPU idle if no process has arrived yet
         }
     }
 
-    int time=0;
-    float totalwt = 0, totaltat = 0;
-
-    for(int i=0;i<n;i++){
-        time+=p[i].burst;
-        p[i].completion = time;
-        p[i].turnaround = p[i].completion;
-        p[i].waiting = p[i].turnaround - p[i].burst;
-
-        totalwt += p[i].waiting;
-        totaltat += p[i].turnaround;
-    }
-
-    printf("\nP\tBT\tCT\tTAT\tWT\n");
+    printf("\nProcess\tAT\tBT\tCT\tTAT\tWT\n");
     for (int i = 0; i < n; i++) {
-        printf("P%d\t%d\t%d\t%d\t%d\n", p[i].id, p[i].burst, p[i].completion, p[i].turnaround, p[i].waiting);
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n", p[i].id, p[i].arrivalTime, p[i].burstTime,
+               p[i].completionTime, p[i].turnaroundTime, p[i].waitingTime);
     }
 
-    printf("\nAverage Waiting Time: %.2f\n", totalwt / n);
-    printf("Average Turnaround Time: %.2f\n", totaltat / n);
+    printf("\nAverage Waiting Time: %.2f", totalWT / n);
+    printf("\nAverage Turnaround Time: %.2f\n", totalTAT / n);
 
     return 0;
 }
